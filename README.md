@@ -2,6 +2,15 @@
 
 [link](https://katacoda.com/thanos/courses/thanos/1-globalview)
 
+## Setup environment
+
+```sh
+multipass launch --name thanos-box -m 3GB -c 2
+multipass mount 
+multipass shell thanos-box
+sudo snap install docker
+```
+
 ## Intro: Global View and seamless HA for Prometheus
 
 `prometheus0_eu1.yml`
@@ -89,3 +98,29 @@ docker run -d --net=host --rm -v $(pwd)/prometheus1_us1.yml:/etc/prometheus/prom
 ```
 
 > Access it at http://192.168.203.140:9092/graph
+
+# Thanos Sidecars
+
+Thanos is a single Go binary capable to run in different modes. Each mode represents a different component and can be invoked in a single command.
+
+```
+sudo docker run --rm quay.io/thanos/thanos:v0.18.0 --help
+```
+
+**2.1 - Adding sidecar to "EU1" Prometheus**
+
+```sh
+sudo docker run -d --net=host --rm -v $(pwd)/prometheus0_eu1.yml:/etc/prometheus/prometheus.yml --name prometheus-0-sidecar-eu1 -u root quay.io/thanos/thanos:v0.18.0 sidecar --http-address 0.0.0.0:19090 --grpc-address 0.0.0.0:19190 --reloader.config-file /etc/prometheus/prometheus.yml --prometheus.url http://127.0.0.1:9090 && echo "Started sidecar for Prometheus 0 EU1"
+```
+
+**2.2 - Adding sidecars to each replica of Prometheus in "US1"**
+
+```sh
+sudo docker run -d --net=host --rm -v $(pwd)/prometheus0_us1.yml:/etc/prometheus/prometheus.yml --name prometheus-0-sidecar-us1 -u root quay.io/thanos/thanos:v0.18.0 sidecar --http-address 0.0.0.0:19091 --grpc-address 0.0.0.0:19191 --reloader.config-file /etc/prometheus/prometheus.yml --prometheus.url http://127.0.0.1:9091 && echo "Started sidecar for Prometheus 0 US1"
+```
+
+```sh
+sudo docker run -d --net=host --rm -v $(pwd)/prometheus1_us1.yml:/etc/prometheus/prometheus.yml --name prometheus-1-sidecar-us1 -u root quay.io/thanos/thanos:v0.18.0 sidecar --http-address 0.0.0.0:19092 --grpc-address 0.0.0.0:19192 --reloader.config-file /etc/prometheus/prometheus.yml --prometheus.url http://127.0.0.1:9092 && echo "Started sidecar for Prometheus 1 US1"
+```
+
+Now, to check if sidecars are running well, let's modify Prometheus scrape configuration to include our added sidecars.  
