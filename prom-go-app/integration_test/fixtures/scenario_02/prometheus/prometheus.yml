@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: eu1
+    replica: 0
+
+scrape_configs:
+  - job_name: metric-generator
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['metric_generator:8080']

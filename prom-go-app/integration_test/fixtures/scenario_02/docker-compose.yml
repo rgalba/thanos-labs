@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  metric_generator:
+    build: ../../..
+    ports:
+      - "8081:8080"
+  prometheus:
+    image: prom/prometheus:v2.21.0
+    ports:
+      - 9000:9090
+    volumes:
+      - ./prometheus:/etc/prometheus/
+      - prometheus-data:/prometheus
+    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus.yml
+volumes:
+  prometheus-data:
