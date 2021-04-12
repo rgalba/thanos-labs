@@ -3,4 +3,4 @@ prometheus0_us1_data/*
 prometheus1_us1_data/*
 prometheus/grafana-4.5.1/*
 prometheus/prometheus0_us1_data/*
-prom-go-app/metric-generator*
+metric-generator-app/metric-generator*
