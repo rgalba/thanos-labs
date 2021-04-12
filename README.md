@@ -137,7 +137,7 @@ sudo docker run -d --net=host --rm --name querier quay.io/thanos/thanos:v0.18.0 
 ## Thanos benchmark
 
 ```shell
-docker run -i quay.io/thanos/thanosbench:v0.2.0-rc.1 block plan -p continuous-365d-tiny --labels 'cluster="eu1"' --max-time=6h | docker run -v $(PWD)/prometheus0_eu1_data:/prom-eu1 -i quay.io/thanos/thanosbench:v0.2.0-rc.1 block gen --output.dir prom-eu1
+docker run -i quay.io/thanos/thanosbench:v0.2.0-rc.1 block plan -p realistic-k8s-2d-small --labels 'cluster="eu1"' --max-time=6h | docker run -v $(PWD)/prometheus0_eu1_data:/prom-eu1 -i quay.io/thanos/thanosbench:v0.2.0-rc.1 block gen --output.dir prom-eu1
 ls -lR $(PWD)/prometheus0_eu1_data
 ```
 
