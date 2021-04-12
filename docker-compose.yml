@@ -1,0 +1,54 @@
+version: "3.9"
+services:
+  prometheus0_eu1:
+    image: prom/prometheus:v2.21.0
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus0_eu1.yml:/etc/prometheus/prometheus0_eu1.yml
+      - ./prometheus0_eu1_data:/prometheus
+    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus0_eu1.yml
+  sidecar0_eu1:
+    image: quay.io/thanos/thanos:v0.18.0
+    depends_on:
+      - prometheus0_eu1
+    ports:
+      - 19090:19090
+    volumes:
+      - ./prometheus0_eu1.yml:/etc/prometheus/prometheus0_eu1.yml
+    command: sidecar --http-address 0.0.0.0:19090 --grpc-address 0.0.0.0:19190 --reloader.config-file /etc/prometheus/prometheus0_eu1.yml --prometheus.url http://prometheus0_eu1:9090
+  prometheus0_us1:
+    image: prom/prometheus:v2.21.0
+    ports:
+      - 9091:9090
+    volumes:
+      - ./prometheus0_us1.yml:/etc/prometheus/prometheus0_us1.yml
+      - ./prometheus0_us1_data:/prometheus
+    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus0_us1.yml
+  sidecar0_us1:
+    image: quay.io/thanos/thanos:v0.18.0
+    depends_on:
+      - prometheus0_us1
+    ports:
+      - 19091:19090
+    volumes:
+      - ./prometheus0_us1.yml:/etc/prometheus/prometheus0_us1.yml
+    command: sidecar --http-address 0.0.0.0:19090 --grpc-address 0.0.0.0:19190 --reloader.config-file /etc/prometheus/prometheus0_us1.yml --prometheus.url http://prometheus0_us1:9090
+  prometheus1_us1:
+    image: prom/prometheus:v2.21.0
+    ports:
+      - 9092:9090
+    volumes:
+      - ./prometheus1_us1.yml:/etc/prometheus/prometheus1_us1.yml
+      - ./prometheus1_us1_data:/prometheus
+    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus1_us1.yml
+  sidecar1_us1:
+    image: quay.io/thanos/thanos:v0.18.0
+    depends_on:
+      - prometheus1_us1
+    ports:
+      - 19092:19090
+    volumes:
+      - ./prometheus1_us1.yml:/etc/prometheus/prometheus1_us1.yml
+    command: sidecar --http-address 0.0.0.0:19090 --grpc-address 0.0.0.0:19190 --reloader.config-file /etc/prometheus/prometheus1_us1.yml --prometheus.url http://prometheus1_us1:9090
+
