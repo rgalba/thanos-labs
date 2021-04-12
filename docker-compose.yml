@@ -138,3 +138,17 @@ services:
       --store store:19191
 #      --store sidecar0_us1:19190
 #      --store sidecar1_us1:19190
+  compact:
+    image: quay.io/thanos/thanos:v0.18.0
+    depends_on:
+      - minio
+    ports:
+      - 19095:19095
+    volumes:
+      - ./bucket.yml:/etc/thanos/minio-bucket.yaml
+    command: |
+      compact
+      --wait --wait-interval 30s
+      --consistency-delay 0s
+      --objstore.config-file /etc/thanos/minio-bucket.yaml
+      --http-address 0.0.0.0:19095
