@@ -4,6 +4,16 @@
 
 ## Setup environment
 
+## Docker Compose
+
+It is possible to create all the containers just by running:
+
+```shell
+docker compose up
+```
+
+## Virtual Machines based environment
+
 ```sh
 multipass launch --name thanos-box -m 3GB -c 2
 multipass mount 
@@ -67,7 +77,7 @@ mkdir -p prometheus0_eu1_data prometheus0_us1_data prometheus1_us1_data
 **3 - Deploying EU1**
 
 ```shell
-sudo docker run -d --net=host --rm -v $(pwd)/prometheus0_eu1.yml:/etc/prometheus/prometheus.yml -v $(pwd)/prometheus0_eu1_data:/prometheus -u root --name prometheus-0-eu1 quay.io/prometheus/prometheus:v2.14.0 --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.listen-address=:9090 --web.external-url=http://192.168.203.137 --web.enable-lifecycle --web.enable-admin-api && echo "Prometheus EU1 started!"
+sudo docker run -d --net=host --rm -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml -v $(pwd)/prometheus0_eu1_data:/prometheus -u root --name prometheus-0-eu1 quay.io/prometheus/prometheus:v2.14.0 --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.listen-address=:9090 --web.external-url=http://192.168.203.137 --web.enable-lifecycle --web.enable-admin-api && echo "Prometheus EU1 started!"
 ```
 
 > Access it at http://192.168.203.140:9090/graph
@@ -99,7 +109,7 @@ sudo docker run --rm quay.io/thanos/thanos:v0.18.0 --help
 **2.1 - Adding sidecar to "EU1" Prometheus**
 
 ```sh
-sudo docker run -d --net=host --rm -v $(pwd)/prometheus0_eu1.yml:/etc/prometheus/prometheus.yml --name prometheus-0-sidecar-eu1 -u root quay.io/thanos/thanos:v0.18.0 sidecar --http-address 0.0.0.0:19090 --grpc-address 0.0.0.0:19190 --reloader.config-file /etc/prometheus/prometheus.yml --prometheus.url http://127.0.0.1:9090 && echo "Started sidecar for Prometheus 0 EU1"
+sudo docker run -d --net=host --rm -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml --name prometheus-0-sidecar-eu1 -u root quay.io/thanos/thanos:v0.18.0 sidecar --http-address 0.0.0.0:19090 --grpc-address 0.0.0.0:19190 --reloader.config-file /etc/prometheus/prometheus.yml --prometheus.url http://127.0.0.1:9090 && echo "Started sidecar for Prometheus 0 EU1"
 ```
 
 **2.2 - Adding sidecars to each replica of Prometheus in "US1"**
