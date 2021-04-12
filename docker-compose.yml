@@ -21,7 +21,6 @@ services:
     command: |
       --web.enable-lifecycle
       --config.file=/etc/prometheus/prometheus.yml
-      --storage.tsdb.retention.time=1000d
       --storage.tsdb.path=/prometheus
       --storage.tsdb.max-block-duration=2h
       --storage.tsdb.min-block-duration=2h
@@ -100,7 +99,7 @@ services:
     image: quay.io/thanos/thanos:v0.18.0
     depends_on:
       - minio
-      - prometheus0_us1
+      - prometheus1_us1
     ports:
       - 19092:19090
     user: root
@@ -115,18 +114,27 @@ services:
       --http-address 0.0.0.0:19090
       --grpc-address 0.0.0.0:19190
       --prometheus.url http://prometheus0_us1:9090
+  store:
+    image: quay.io/thanos/thanos:v0.18.0
+    depends_on:
+      - minio
+    volumes:
+      - ./bucket.yml:/etc/thanos/minio-bucket.yaml
+    command: |
+      store
+      --objstore.config-file /etc/thanos/minio-bucket.yaml
+      --http-address 0.0.0.0:19091
+      --grpc-address 0.0.0.0:19191
   querier:
     image: quay.io/thanos/thanos:v0.18.0
     depends_on:
-      - sidecar0_eu1
-      - sidecar0_us1
-      - sidecar1_us1
+      - store
     ports:
       - 29090:29090
     command: |
       query
       --http-address 0.0.0.0:29090
       --query.replica-label replica
-      --store sidecar0_eu1:19190
-      --store sidecar0_us1:19190
-      --store sidecar1_us1:19190
+      --store store:19191
+#      --store sidecar0_us1:19190
+#      --store sidecar1_us1:19190
