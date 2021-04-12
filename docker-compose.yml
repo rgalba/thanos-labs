@@ -1,63 +1,114 @@
 version: "3.9"
 services:
+  minio:
+    image: minio/minio:RELEASE.2021-04-06T23-11-00Z
+    ports:
+      - 9000:9000
+    volumes:
+      - ./minio-data:/data
+    environment:
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=thanoslabs
+    command: server /data
   prometheus0_eu1:
     image: prom/prometheus:v2.21.0
     ports:
       - 9090:9090
+    user: root
     volumes:
-      - ./prometheus0_eu1.yml:/etc/prometheus/prometheus0_eu1.yml
+      - ./prometheus0_eu1.yml:/etc/prometheus/prometheus.yml
       - ./prometheus0_eu1_data:/prometheus
-    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus0_eu1.yml
+    command: |
+      --web.enable-lifecycle
+      --config.file=/etc/prometheus/prometheus.yml
+      --storage.tsdb.retention.time=1000d
+      --storage.tsdb.path=/prometheus
+      --storage.tsdb.max-block-duration=2h
+      --storage.tsdb.min-block-duration=2h
+      --web.enable-admin-api
   sidecar0_eu1:
     image: quay.io/thanos/thanos:v0.18.0
     depends_on:
+      - minio
       - prometheus0_eu1
     ports:
       - 19090:19090
+    user: root
     volumes:
-      - ./prometheus0_eu1.yml:/etc/prometheus/prometheus0_eu1.yml
-    command: sidecar --http-address 0.0.0.0:19090 --grpc-address 0.0.0.0:19190 --reloader.config-file /etc/prometheus/prometheus0_eu1.yml --prometheus.url http://prometheus0_eu1:9090
+      - ./prometheus0_eu1_data:/prometheus
+      - ./bucket.yml:/etc/thanos/minio-bucket.yaml
+    command: |
+      sidecar
+      --tsdb.path /prometheus
+      --objstore.config-file /etc/thanos/minio-bucket.yaml
+      --shipper.upload-compacted
+      --http-address 0.0.0.0:19090
+      --grpc-address 0.0.0.0:19190
+      --prometheus.url http://prometheus0_eu1:9090
   prometheus0_us1:
     image: prom/prometheus:v2.21.0
     ports:
       - 9091:9090
+    user: root
     volumes:
-      - ./prometheus0_us1.yml:/etc/prometheus/prometheus0_us1.yml
+      - ./prometheus0_us1.yml:/etc/prometheus/prometheus.yml
       - ./prometheus0_us1_data:/prometheus
-    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus0_us1.yml
+    command: |
+      --web.enable-lifecycle
+      --config.file=/etc/prometheus/prometheus.yml
+      --storage.tsdb.retention.time=1000d
+      --storage.tsdb.path=/prometheus
+      --storage.tsdb.max-block-duration=2h
+      --storage.tsdb.min-block-duration=2h
+      --web.enable-admin-api
   sidecar0_us1:
     image: quay.io/thanos/thanos:v0.18.0
     depends_on:
+      - minio
       - prometheus0_us1
     ports:
       - 19091:19090
+    user: root
     volumes:
-      - ./prometheus0_us1.yml:/etc/prometheus/prometheus0_us1.yml
-    command: sidecar --http-address 0.0.0.0:19090 --grpc-address 0.0.0.0:19190 --reloader.config-file /etc/prometheus/prometheus0_us1.yml --prometheus.url http://prometheus0_us1:9090
-  prometheus1_us1:
-    image: prom/prometheus:v2.21.0
-    ports:
-      - 9092:9090
-    volumes:
-      - ./prometheus1_us1.yml:/etc/prometheus/prometheus1_us1.yml
-      - ./prometheus1_us1_data:/prometheus
-    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus1_us1.yml
-  sidecar1_us1:
-    image: quay.io/thanos/thanos:v0.18.0
-    depends_on:
-      - prometheus1_us1
-    ports:
-      - 19092:19090
-    volumes:
-      - ./prometheus1_us1.yml:/etc/prometheus/prometheus1_us1.yml
-    command: sidecar --http-address 0.0.0.0:19090 --grpc-address 0.0.0.0:19190 --reloader.config-file /etc/prometheus/prometheus1_us1.yml --prometheus.url http://prometheus1_us1:9090
+      - ./prometheus0_us1_data:/prometheus
+      - ./bucket.yml:/etc/thanos/minio-bucket.yaml
+    command: |
+      sidecar
+      --tsdb.path /prometheus
+      --objstore.config-file /etc/thanos/minio-bucket.yaml
+      --shipper.upload-compacted
+      --http-address 0.0.0.0:19091
+      --grpc-address 0.0.0.0:19190
+      --prometheus.url http://prometheus0_us1:9090
+#  prometheus1_us1:
+#    image: prom/prometheus:v2.21.0
+#    ports:
+#      - 9092:9090
+#    volumes:
+#      - ./prometheus1_us1.yml:/etc/prometheus/prometheus1_us1.yml
+#      - ./prometheus1_us1_data:/prometheus
+#    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus1_us1.yml
+#  sidecar1_us1:
+#    image: quay.io/thanos/thanos:v0.18.0
+#    depends_on:
+#      - prometheus1_us1
+#    ports:
+#      - 19092:19090
+#    volumes:
+#      - ./prometheus1_us1.yml:/etc/prometheus/prometheus1_us1.yml
+#    command: sidecar --http-address 0.0.0.0:19090 --grpc-address 0.0.0.0:19190 --reloader.config-file /etc/prometheus/prometheus1_us1.yml --prometheus.url http://prometheus1_us1:9090
   querier:
     image: quay.io/thanos/thanos:v0.18.0
     depends_on:
       - sidecar0_eu1
       - sidecar0_us1
-      - sidecar1_us1
+#      - sidecar1_us1
     ports:
       - 29090:29090
-    command: query --http-address 0.0.0.0:29090 --query.replica-label replica --store sidecar0_eu1:19190 --store sidecar0_us1:19190 --store sidecar1_us1:19190
-
+    command: |
+      query
+      --http-address 0.0.0.0:29090
+      --query.replica-label replica
+      --store sidecar0_eu1:19190
+      --store sidecar0_us1:19190
+#      --store sidecar1_us1:19190

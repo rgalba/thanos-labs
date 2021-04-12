@@ -141,4 +141,14 @@ docker run -i quay.io/thanos/thanosbench:v0.2.0-rc.1 block plan -p continuous-36
 ls -lR $(PWD)/prometheus0_eu1_data
 ```
 
+```shell
+docker run -i quay.io/thanos/thanosbench:v0.2.0-rc.1 block plan -p continuous-365d-tiny --labels 'cluster="eu1"' --max-time=6h | docker run -v $(PWD)/prometheus0_us1_data:/prom-eu1 -i quay.io/thanos/thanosbench:v0.2.0-rc.1 block gen --output.dir prom-eu1
+ls -lR $(PWD)/prometheus0_us1_data
+```
+
+```shell
+docker run -i quay.io/thanos/thanosbench:v0.2.0-rc.1 block plan -p continuous-365d-tiny --labels 'cluster="eu1"' --max-time=6h | docker run -v $(PWD)/prometheus1_us1_data:/prom-eu1 -i quay.io/thanos/thanosbench:v0.2.0-rc.1 block gen --output.dir prom-eu1
+ls -lR $(PWD)/prometheus1_us1_data
+```
+
 (Prometheus query)[http://localhost:9090/graph?g0.range_input=1y&g0.expr=continuous_app_metric0&g0.tab=0]
