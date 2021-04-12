@@ -51,4 +51,13 @@ services:
     volumes:
       - ./prometheus1_us1.yml:/etc/prometheus/prometheus1_us1.yml
     command: sidecar --http-address 0.0.0.0:19090 --grpc-address 0.0.0.0:19190 --reloader.config-file /etc/prometheus/prometheus1_us1.yml --prometheus.url http://prometheus1_us1:9090
+  querier:
+    image: quay.io/thanos/thanos:v0.18.0
+    depends_on:
+      - sidecar0_eu1
+      - sidecar0_us1
+      - sidecar1_us1
+    ports:
+      - 29090:29090
+    command: query --http-address 0.0.0.0:29090 --query.replica-label replica --store sidecar0_eu1:19190 --store sidecar0_us1:19190 --store sidecar1_us1:19190
 
