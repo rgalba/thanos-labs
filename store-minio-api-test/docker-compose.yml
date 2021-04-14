@@ -1,0 +1,66 @@
+version: "3.9"
+services:
+  minio:
+    image: minio/minio:RELEASE.2021-04-06T23-11-00Z
+    ports:
+      - 9000:9000
+    volumes:
+      - ./minio-data:/data
+    environment:
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=thanoslabs
+    command: server /data
+  prometheus:
+    image: prom/prometheus:v2.21.0
+    ports:
+      - 9090:9090
+    user: root
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prom-data:/prometheus
+    command: |
+      --web.enable-lifecycle
+      --config.file=/etc/prometheus/prometheus.yml
+      --storage.tsdb.path=/prometheus
+      --storage.tsdb.max-block-duration=2h
+      --storage.tsdb.min-block-duration=2h
+      --web.enable-admin-api
+  grafana:
+    image: grafana/grafana:5.1.0
+    ports:
+      - 3000:3000
+    depends_on: 
+      - prometheus
+    user: "104"    
+  store:
+    image: quay.io/thanos/thanos:v0.18.0
+    depends_on:
+      - minio
+    ports: 
+      - 19191:19191
+    volumes:
+      - ./bucket.yml:/etc/thanos/minio-bucket.yaml
+    command: |
+      store
+      --objstore.config-file /etc/thanos/minio-bucket.yaml
+      --http-address 0.0.0.0:19090
+      --grpc-address 0.0.0.0:19191
+  querier:
+    image: quay.io/thanos/thanos:v0.18.0
+    depends_on:
+      - store
+    ports:
+      - 29090:29090
+    command: |
+      query
+      --http-address 0.0.0.0:29090
+      --query.replica-label replica
+      --store store:19191
+  # bench:
+  #   image: quay.io/thanos/thanosbench:v0.2.0-rc.1
+  #   command: |
+  #     stress 
+  #     --log.level=info 
+  #     --workers=10
+  #     store:19191
+
