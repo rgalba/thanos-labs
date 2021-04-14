@@ -5,3 +5,6 @@ prometheus/grafana-4.5.1/*
 prometheus/prometheus0_us1_data/*
 metric-generator-app/metric-generator*
 /minio-data/
+store-minio-api-test/minio-data/*
+store-minio-api-test/prom-data/*
+.idea/*
