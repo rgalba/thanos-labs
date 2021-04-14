@@ -152,3 +152,18 @@ ls -lR $(PWD)/prometheus1_us1_data
 ```
 
 (Prometheus query)[http://localhost:9090/graph?g0.range_input=1y&g0.expr=continuous_app_metric0&g0.tab=0]
+
+
+## Query + Store + Minio
+
+```shell
+cd store-minio-api-test
+mkdir minio-data
+mkdir prom-data
+docker run -i quay.io/thanos/thanosbench:v0.2.0-rc.1 block plan -p continuous-365d-tiny --labels 'cluster="eu1"' --max-time=6h | docker run -v $(PWD)/minio-data/thanos:/prom-data -i quay.io/thanos/thanosbench:v0.2.0-rc.1 block gen --output.dir prom-data
+docker compose up
+```
+
+```
+docker run -i quay.io/thanos/thanosbench:v0.2.0-rc.1 
+```
